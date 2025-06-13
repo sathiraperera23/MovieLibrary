@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Movie Finder</title>
+    <script src="https://unpkg.com/vue@3"></script>
+    <link rel="stylesheet" href="styles.css" />
+
+</head>
+
+<body>
+<div id="app">
+    <header class="hero">
+        <nav>
+            <div class="logo">
+                <img src="assets/Logos/Logo%20White.svg" alt="Movie Library logo - Home page link">
+            </div>
+            <div class="nav-wrapper">
+                <div class="menu" :class="{ show: menuOpen }">
+                    <a href="#quickInfo" @click="closeMenu">Quick Info</a>
+                    <a href="#contact" @click="closeMenu">Contact</a>
+                </div>
+                <div class="hamburger" @click="toggleMenu">
+                    <img v-if="!menuOpen" src="assets/Icons/Menu%20White.svg" alt="Menu" style="height:24px;" />
+                    <img v-else src="assets/Icons/Close%20White.svg" alt="Close" style="height:24px;" />
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main class="container">
+
+        <section>
+            <h1>MOVIE LIBRARY</h1>
+            <p>Discover movies and shows, view details, and build your own list.</p>
+        </section>
+
+        <div class="middle-section">
+
+            <section class="search-section">
+                <div class="search-title" :class="{ hidden: searchQuery.trim() }">
+                    Collect your favourites
+                </div>
+                <div class="search-bar">
+                    <label for="searchInput">Search Movies</label>
+                    <input
+                            id="searchInput"
+                            v-model="searchQuery"
+                            @input="search"
+                            placeholder="Search title and add to grid"
+                    />
+                </div>
+            </section>
+
+
+            <section id="quickInfo">
+                <div class="grid" v-if="!searchQuery.trim()">
+                    <div class="card" v-for="(item, index) in featured" :key="'feat-' + index">
+                        <div class="card-inner">
+                            <div class="card-front">
+                                <img :src="item.image" :alt="item.alt || item.title" />
+                                <h4>{{ item.title }}</h4>
+                            </div>
+
+                            <div class="card-back">
+                                <p>{{ item.description }}</p>
+                                <div class="card-buttons">
+                                    <button @click="addToGrid(item)">Add</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <section v-if="results.length">
+                    <h2 style="margin-top:1.5rem;">Search Results</h2>
+                    <div class="grid">
+                        <div class="card" v-for="item in results" :key="item.id">
+                            <div class="card-inner">
+                                <div class="card-front">
+                                    <img :src="item.image" :alt="item.title" />
+                                    <h4>{{ item.title }}</h4>
+                                </div>
+                                <div class="card-back">
+                                    <p v-html="shortenDescription(item.description)"></p>
+                                    <button @click="addToGrid(item)">Add</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+        </div>
+                </section>
+
+
+                <section class="gap-divider"></section>
+
+                <section id="my-list-section" v-if="grid.length">
+                <h2 style="margin-top:1.5rem;">My List</h2>
+                <div class="grid">
+                    <div class="card" v-for="(movie, index) in grid" :key="movie.id">
+                        <img :src="movie.image" :alt="movie.title"/>
+<!--                        <h4 class="card-title">{{ movie.title }}</h4>-->
+                        <button class="remove-icon" style="padding: 18px">
+
+                        <img class="remove-icon" @click="removeFromGrid(index)" src="assets/Icons/Close%20White.svg" alt="Remove" />
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </section>        </main>
+
+    </div>
+
+        <section id="contact" style="margin-top:2rem;">
+
+        <h2>How to reach us</h2>
+            <div class="contact-map-container">
+                <form class="contact-form" @submit.prevent="submitForm" novalidate>
+                    <div class="form-group">
+                        <label for="firstName">First Name *</label>
+                        <input
+                                id="firstName"
+                                type="text"
+                                v-model="form.firstName"
+                                :aria-invalid="errors.firstName ? 'true' : 'false'"
+                                :aria-describedby="errors.firstName ? 'firstNameError' : null"
+                        />
+                        <span id="firstNameError" class="error" v-if="errors.firstName">First name is required.</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lastName">Last Name *</label>
+                        <input
+                                id="lastName"
+                                type="text"
+                                v-model="form.lastName"
+                                :aria-invalid="errors.lastName ? 'true' : 'false'"
+                                :aria-describedby="errors.lastName ? 'lastNameError' : null"
+                        />
+                        <span id="lastNameError" class="error" v-if="errors.lastName">Last name is required.</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input
+                                id="email"
+                                type="email"
+                                v-model="form.email"
+                                :aria-invalid="errors.email ? 'true' : 'false'"
+                                :aria-describedby="errors.email ? 'emailError' : null"
+                        />
+                        <span id="emailError" class="error" v-if="errors.email">Email is required.</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone</label>
+                        <input id="phone" type="tel" v-model="form.phone" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comments">Comments *</label>
+                        <textarea
+                                id="comments"
+                                rows="4"
+                                v-model="form.comments"
+                                :aria-invalid="errors.comments ? 'true' : 'false'"
+                                :aria-describedby="errors.comments ? 'commentsError' : null"
+                        ></textarea>
+                        <span id="commentsError" class="error" v-if="errors.comments">Comments are required.</span>
+                    </div>
+
+                    <button type="submit">Submit</button>
+                </form>
+
+
+                <div class="map-embed">
+                    <iframe
+                            src="https://www.google.com/maps/embed?..."
+                            title="Map showing our location"
+                            allowfullscreen
+                            loading="lazy"
+                            style="width:100%;height:300px;border:0;">
+                    </iframe>
+                </div>
+            </div>
+        </section>
+    </div>
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-logo">
+                <img src="assets/Logos/Logo%20White.svg" alt="Movie Library Logo" />
+            </div>
+
+            <div class="footer-social">
+                <a href="https://youtube.com" target="_blank" class="social-icon">
+                    <img src="assets/Icons/Youtube%20White.svg" alt="Youtube" />
+                </a>
+                <a href="https://twitter.com" target="_blank" class="social-icon">
+                    <img src="assets/Icons/Twitter%20White.svg" alt="Twitter" />
+                </a>
+
+            </div>
+
+            <div class="footer-contact">
+                <p>Email: contact@movielibrary.com</p>
+                <p>Phone: +1 (123) 456-7890</p>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; 2025 Movie Library. All rights reserved.</p>
+        </div>
+    </footer>
+
+</div>
+
+
+
+
+<script>
+    const { createApp } = Vue;
+    createApp({
+        data(){
+            return{
+                menuOpen:false,
+                searchQuery:'',
+                results:[],
+                grid:[],
+                featured: [
+                    {
+                        id: 1,
+                        title: 'Batman',
+                        image: 'assets/Images/Batman.jpg',
+                        description: 'A great batman movie',
+                        alt: 'Poster of Batman movie'
+                    },
+                    {
+                        id: 2,
+                        title: 'Spiderman',
+                        image: 'assets/Images/Spiderman.jpg',
+                        description: 'Another movie of spiderman',
+                        alt: 'Poster of Spiderman movie'
+                    },
+                    {
+                        id: 3,
+                        title: 'Wild West',
+                        image: 'assets/Images/Wild West.jpg',
+                        description: "Don't miss this one from Wild West",
+                        alt: 'Poster of Wild West movie'
+                    }
+                ],
+
+                form:{firstName:'',lastName:'',email:'',phone:'',comments:''},
+                errors:{}
+            };
+        },
+        watch: {
+            searchQuery(newQuery) {
+                if (newQuery.trim()) {
+                    this.search();
+                } else {
+                    this.results = [];
+                }
+            }
+        },
+        methods:{
+            toggleMenu(){this.menuOpen=!this.menuOpen;},
+            closeMenu(){this.menuOpen=false;},
+            async search(){
+                if(!this.searchQuery.trim()) return;
+                const res=await fetch(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(this.searchQuery)}`);
+                const data=await res.json();
+                this.results=data.map(d=>({id:d.show.id,title:d.show.name,image:d.show.image?.medium||'https://via.placeholder.com/210x295?text=No+Image',description:d.show.summary||''}));
+            },
+            addToGrid(item){ if(!this.grid.find(m=>m.id===item.id)){ this.grid.push(item);} },
+            removeFromGrid(idx){ this.grid.splice(idx,1); },
+            submitForm(){
+                this.errors={};
+                if(!this.form.firstName) this.errors.firstName=true;
+                if(!this.form.lastName)  this.errors.lastName=true;
+                if(!this.form.email)     this.errors.email=true;
+                if(!this.form.comments)  this.errors.comments=true;
+                if(Object.keys(this.errors).length===0){alert('Form submitted!');this.form={firstName:'',lastName:'',email:'',phone:'',comments:''};}
+            },
+            removeHtmlTags(str) {
+                return str.replace(/<[^>]*>/g, '');
+            },
+            shortenDescription(description, maxLength = 150) {
+                const cleanDescription = this.removeHtmlTags(description);
+                if (cleanDescription.length > maxLength) {
+                    return cleanDescription.substring(0, maxLength) + '...';
+                }
+                return cleanDescription;
+            }
+        }
+    }).mount('#app');
+</script>
+
+</body>
+</html>
