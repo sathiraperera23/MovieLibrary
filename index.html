@@ -93,7 +93,6 @@
                         </div>
                     </div>
 
-        </div>
                 </section>
 
 
@@ -111,8 +110,15 @@
                         </button>
                     </div>
                 </div>
+                    <button
+                            v-if="grid.length && !myListRevealed"
+                            @click="scrollToMyList"
+                            class="view-my-list">
+                        View My List ↓
+                    </button>
             </section>
-        </section>        </main>
+        </section>
+        </main>
 
     </div>
 
@@ -125,24 +131,28 @@
                         <label for="firstName">First Name *</label>
                         <input
                                 id="firstName"
+                                title="Enter your first name using only letters"
                                 type="text"
+                                autocomplete="off"
                                 v-model="form.firstName"
                                 :aria-invalid="errors.firstName ? 'true' : 'false'"
                                 :aria-describedby="errors.firstName ? 'firstNameError' : null"
                         />
-                        <span id="firstNameError" class="error" v-if="errors.firstName">First name is required.</span>
+                        <span id="firstNameError" class="error" v-if="errors.firstName">{{ errors.firstName }}</span>
                     </div>
 
                     <div class="form-group">
                         <label for="lastName">Last Name *</label>
                         <input
                                 id="lastName"
+                                title="Enter your last name using only letters"
                                 type="text"
+                                autocomplete="off"
                                 v-model="form.lastName"
                                 :aria-invalid="errors.lastName ? 'true' : 'false'"
                                 :aria-describedby="errors.lastName ? 'lastNameError' : null"
                         />
-                        <span id="lastNameError" class="error" v-if="errors.lastName">Last name is required.</span>
+                        <span id="lastNameError" class="error" v-if="errors.lastName">{{ errors.lastName }}</span>
                     </div>
 
                     <div class="form-group">
@@ -150,6 +160,7 @@
                         <input
                                 id="email"
                                 type="email"
+                                title="Enter your email"
                                 v-model="form.email"
                                 :aria-invalid="errors.email ? 'true' : 'false'"
                                 :aria-describedby="errors.email ? 'emailError' : null"
@@ -166,7 +177,9 @@
                         <label for="comments">Comments *</label>
                         <textarea
                                 id="comments"
+                                title="Enter your of a maximum 100 letters"
                                 rows="4"
+                                maxlength="100"
                                 v-model="form.comments"
                                 :aria-invalid="errors.comments ? 'true' : 'false'"
                                 :aria-describedby="errors.comments ? 'commentsError' : null"
@@ -180,12 +193,12 @@
 
                 <div class="map-embed">
                     <iframe
-                            src="https://www.google.com/maps/embed?..."
-                            title="Map showing our location"
+                            src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d48588.133010545425!2d-3.7152472!3d40.4363503!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd422f35d4f0c269%3A0x754405946e8ca584!2sAmadeus%20IT%20Group!5e0!3m2!1sen!2slk!4v1750065538643!5m2!1sen!2slk"                             title="Map showing our location"
                             allowfullscreen
                             loading="lazy"
                             style="width:100%;height:300px;border:0;">
                     </iframe>
+
                 </div>
             </div>
         </section>
@@ -217,12 +230,19 @@
         </div>
     </footer>
 
+
 </div>
 
 
+<!-- Toastify CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+
+<!-- Toastify JS -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 
 
 <script>
+
     const { createApp } = Vue;
     createApp({
         data(){
@@ -231,6 +251,7 @@
                 searchQuery:'',
                 results:[],
                 grid:[],
+                myListRevealed: false,
                 featured: [
                     {
                         id: 1,
@@ -259,6 +280,10 @@
                 errors:{}
             };
         },
+        mounted() {
+            console.log('Vue app mounted');
+        },
+
         watch: {
             searchQuery(newQuery) {
                 if (newQuery.trim()) {
@@ -277,16 +302,97 @@
                 const data=await res.json();
                 this.results=data.map(d=>({id:d.show.id,title:d.show.name,image:d.show.image?.medium||'https://via.placeholder.com/210x295?text=No+Image',description:d.show.summary||''}));
             },
-            addToGrid(item){ if(!this.grid.find(m=>m.id===item.id)){ this.grid.push(item);} },
-            removeFromGrid(idx){ this.grid.splice(idx,1); },
-            submitForm(){
-                this.errors={};
-                if(!this.form.firstName) this.errors.firstName=true;
-                if(!this.form.lastName)  this.errors.lastName=true;
-                if(!this.form.email)     this.errors.email=true;
-                if(!this.form.comments)  this.errors.comments=true;
-                if(Object.keys(this.errors).length===0){alert('Form submitted!');this.form={firstName:'',lastName:'',email:'',phone:'',comments:''};}
+            addToGrid(item) {
+                const MAX_MOVIES = 5;
+
+                if (this.grid.length >= MAX_MOVIES) {
+                    alert(`You can only add up to ${MAX_MOVIES} movies to your list.`);
+                    return;
+                }
+
+                if (!this.grid.find(m => m.id === item.id)) {
+                    this.grid.push(item);
+                }
             },
+            removeFromGrid(idx){ this.grid.splice(idx,1); },
+            submitForm() {
+                this.errors = {};
+
+                const nameRegex = /^[A-Za-z\s'-]+$/;  // only letters, space, apostrophe, hyphen
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                const phoneRegex = /^\d{7,15}$/;
+
+                const firstName = this.form.firstName.trim();
+                const lastName = this.form.lastName.trim();
+                const email = this.form.email.trim();
+                const phone = this.form.phone.trim();
+                const comments = this.form.comments.trim();
+
+                // First Name Validation
+                if (!firstName) {
+                    this.errors.firstName = 'First name is required.';
+                } else if (!nameRegex.test(firstName)) {
+                    this.errors.firstName = 'First name must contain only letters.';
+                    console.log('First Name:', firstName, 'Valid?', nameRegex.test(firstName));
+
+                }
+
+                // Last Name Validation
+                if (!lastName) {
+                    this.errors.lastName = 'Last name is required.';
+                } else if (!nameRegex.test(lastName)) {
+                    this.errors.lastName = 'Last name must contain only letters.';
+                }
+
+                // Email Validation
+                if (!email) {
+                    this.errors.email = 'Email is required.';
+                } else if (!emailRegex.test(email)) {
+                    this.errors.email = 'Email is not valid.';
+                }
+
+
+                // Phone Validation (optional)
+                if (phone && !phoneRegex.test(phone)) {
+                    this.errors.phone = 'Phone number must be 7 to 15 digits.';
+                }
+
+                // Comments Validation
+                if (!comments) {
+                    this.errors.comments = 'Comments are required.';
+                }
+
+                // Check if errors exist
+                if (Object.keys(this.errors).length > 0) {
+                    console.log('Form has errors:', this.errors); // for debug
+                    return; // stop form submission
+                }
+
+                // No errors — submit
+                Toastify({
+                    text: "Form submitted successfully!",
+                    duration: 3000,
+                    gravity: "top",
+                    position: "right",
+                    backgroundColor: "#4CAF50",
+                    close: true
+                }).showToast();
+                this.form = { firstName: '', lastName: '', email: '', phone: '', comments: '' };
+            },
+            scrollToMyList() {
+                console.log('scrollToMyList triggered');
+                this.$nextTick(() => {
+                    const section = document.getElementById("my-list-section");
+                    if (section) {
+                        section.scrollIntoView({ behavior: "smooth" });
+                        this.myListRevealed = true;
+                    } else {
+                        console.warn("My List section not found.");
+                    }
+                });
+            },
+
+
             removeHtmlTags(str) {
                 return str.replace(/<[^>]*>/g, '');
             },
