@@ -3,10 +3,12 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Movie Finder</title>
     <script src="https://unpkg.com/vue@3"></script>
     <link rel="stylesheet" href="styles.css" />
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 
 </head>
 
@@ -234,12 +236,6 @@
 </div>
 
 
-<!-- Toastify CSS -->
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-
-<!-- Toastify JS -->
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-
 
 <script>
 
@@ -306,7 +302,15 @@
                 const MAX_MOVIES = 5;
 
                 if (this.grid.length >= MAX_MOVIES) {
-                    alert(`You can only add up to ${MAX_MOVIES} movies to your list.`);
+                    Toastify({
+                        text: `You can only add up to ${MAX_MOVIES} movies to your list.`,
+                        duration: 3000,
+                        gravity: "top",
+                        position: "right",
+                        backgroundColor: "#FFA500",
+                        className: "toast-warning",
+                        close: true
+                    }).showToast();
                     return;
                 }
 
@@ -314,11 +318,12 @@
                     this.grid.push(item);
                 }
             },
+
             removeFromGrid(idx){ this.grid.splice(idx,1); },
             submitForm() {
                 this.errors = {};
 
-                const nameRegex = /^[A-Za-z\s'-]+$/;  // only letters, space, apostrophe, hyphen
+                const nameRegex = /^[A-Za-z\s'-]+$/;
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 const phoneRegex = /^\d{7,15}$/;
 
@@ -328,7 +333,6 @@
                 const phone = this.form.phone.trim();
                 const comments = this.form.comments.trim();
 
-                // First Name Validation
                 if (!firstName) {
                     this.errors.firstName = 'First name is required.';
                 } else if (!nameRegex.test(firstName)) {
@@ -337,14 +341,12 @@
 
                 }
 
-                // Last Name Validation
                 if (!lastName) {
                     this.errors.lastName = 'Last name is required.';
                 } else if (!nameRegex.test(lastName)) {
                     this.errors.lastName = 'Last name must contain only letters.';
                 }
 
-                // Email Validation
                 if (!email) {
                     this.errors.email = 'Email is required.';
                 } else if (!emailRegex.test(email)) {
@@ -352,23 +354,19 @@
                 }
 
 
-                // Phone Validation (optional)
                 if (phone && !phoneRegex.test(phone)) {
                     this.errors.phone = 'Phone number must be 7 to 15 digits.';
                 }
 
-                // Comments Validation
                 if (!comments) {
                     this.errors.comments = 'Comments are required.';
                 }
 
-                // Check if errors exist
                 if (Object.keys(this.errors).length > 0) {
-                    console.log('Form has errors:', this.errors); // for debug
-                    return; // stop form submission
+                    console.log('Form has errors:', this.errors);
+                    return;
                 }
 
-                // No errors — submit
                 Toastify({
                     text: "Form submitted successfully!",
                     duration: 3000,
